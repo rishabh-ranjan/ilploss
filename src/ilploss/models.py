@@ -105,6 +105,10 @@ class ILPModel(pl.LightningModule):
         self.metrics[f"{r}/acc/all"](yhat.long() - lb, batch["y"].long() - lb)
 
     def validation_epoch_end(self, outputs):
+        logger.info(f"Epoch {self.current_epoch}")
+        for k, v in self.metrics.items():
+            logger.info(f"{k}: {v.compute().item():.4f}")
+        logger.info("")
         self.log_dict(self.metrics)
 
     def training_step(self, batch, batch_idx, optimizer_idx=0):

@@ -1,11 +1,9 @@
-from . import utils
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchmetrics as tm
-
-from typing import List, Optional
 
 
 class SamplerList(nn.Module):

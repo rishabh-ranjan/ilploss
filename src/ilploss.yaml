@@ -3,7 +3,7 @@ seed_everything: 42
 data:
   class_path: ilploss.data.BaseDataModule
   init_args:
-    data_path: data/dense_random/16_dim/8_const/0/dataset.pt
+    data_path: data/random/dense/16_dim/1_const/0/dataset.pt
     splits:
       train: 1500
       val: 100
@@ -29,6 +29,7 @@ model:
               init_args:
                 num_vars: 16
                 num_constrs: 16
+
             c_encoder:
               class_path: ilploss.encoders.IdentityCEncoder
 
@@ -108,11 +109,18 @@ model:
 trainer:
   max_epochs: 1_000_000
   callbacks:
+    - class_path: pytorch_lightning.callbacks.RichModelSummary
+    - class_path: pytorch_lightning.callbacks.RichProgressBar
     - class_path: pytorch_lightning.callbacks.EarlyStopping
       init_args:
         monitor: val/acc/idv
         patience: 20
         mode: max
+
+  accelerator: gpu
+  devices: 1
+  auto_select_gpus: true
+  precision: 16
 
   num_sanity_val_steps: 0
   check_val_every_n_epoch: 20

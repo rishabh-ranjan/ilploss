@@ -14,4 +14,4 @@ if __name__ == "__main__":
     )
     cli.trainer.validate(cli.model, cli.datamodule)
     cli.trainer.fit(cli.model, cli.datamodule)
-    cli.trainer.test(cli.datamodule)
+    cli.trainer.test(datamodule=cli.datamodule)
