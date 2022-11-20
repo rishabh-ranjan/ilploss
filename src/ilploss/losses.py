@@ -3,7 +3,6 @@ from typing import Callable, List, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torchmetrics as tm
 
 
 def one_hot_argmin(x, dim):

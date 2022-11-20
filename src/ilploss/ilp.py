@@ -97,27 +97,24 @@ class DiffSolve(autograd.Function):
         return None, da, db, dc, None
 
 
-from typing import Any
-
-
-class ILPSolve(nn.Module):
+class ILPSolver(nn.Module):
     def __init__(
         self,
         vtype: str = GRB.INTEGER,
         env: Optional[grb.Env] = None,
         num_workers: int = 1,
         show_tqdm: bool = False,
-        tau: float = 1.0,
+        temp: float = 1.0,
     ):
         super().__init__()
         self.vtype = vtype
         self.env = grb.Env(params={"OutputFlag": 0}) if env is None else env
         self.exe = ThreadPoolExecutor(num_workers)
         self.show_tqdm = show_tqdm
-        self.tau = tau
+        self.temp = temp
 
     def min(self, x, dim):
-        return -self.tau * torch.logsumexp(-x / self.tau, dim=dim)
+        return -self.temp * torch.logsumexp(-x / self.temp, dim=dim)
 
     def criterion(self, a, b, c, pos, neg):
         """
@@ -148,18 +145,8 @@ class ILPSolve(nn.Module):
         """
 
         loss_pos = torch.sum(F.relu(-dist_pos), dim=-1)
-        err_pos = torch.max(F.relu(-dist_pos), dim=-1).values
-        margin_pos = torch.min(F.relu(dist_pos), dim=-1).values
-
         loss_neg = torch.mean(self.min(F.relu(dist_neg), dim=-1), dim=-1)
-        err_neg = torch.max(torch.min(F.relu(dist_neg), dim=-1).values, dim=-1).values
-        margin_neg = torch.min(
-            torch.max(F.relu(-dist_neg), dim=-1).values, dim=-1
-        ).values
-
         loss_obj = torch.mean(F.relu(dist_obj), dim=-1)
-        err_obj = torch.max(F.relu(dist_obj), dim=-1).values
-        margin_obj = torch.min(F.relu(-dist_obj), dim=-1).values
 
         loss = loss_pos + (loss_neg + loss_obj) * (loss_pos == 0)
 
@@ -168,10 +155,8 @@ class ILPSolve(nn.Module):
     def solve(self, *args):
         a = args[0]
         batch_size, _, num_vars = a.shape
-        y = np.empty([batch_size, num_vars])
-        # y = torch.empty(batch_size, num_vars, device=a.device)
+        y = np.empty([batch_size, num_vars], dtype=np.float32)
         status = np.empty([batch_size], dtype=np.int64)
-        # status = torch.empty(batch_size, device=a.device, dtype=torch.long)
 
         def aux(i, a, b, c, h=None):
             num_constrs, num_vars = a.shape
@@ -183,11 +168,9 @@ class ILPSolve(nn.Module):
                 y_obj.varHintVal = h
             m.optimize()
             try:
-                # y[i] = torch.as_tensor(y_obj.x)
                 y[i] = y_obj.x
             except grb.GurobiError:
                 logger.warning("dummy value of 0 for no soln, e.g. for infeasible ILP")
-                # y[i] = torch.zeros(num_vars)
                 y[i] = np.zeros(num_vars)
             status[i] = m.status
 
@@ -205,8 +188,9 @@ class ILPSolve(nn.Module):
             )
         )
 
-        return torch.as_tensor(y, device=a.device), torch.as_tensor(
-            status, device=a.device
+        return (
+            torch.as_tensor(y, device=a.device),
+            torch.as_tensor(status, device=a.device),
         )
 
     def forward(self, *args):
