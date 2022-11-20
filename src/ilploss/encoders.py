@@ -142,21 +142,6 @@ class StaticLUEncoder(nn.Module):
         return self.l[None, :].expand(bs, -1), self.u[None, :].expand(bs, -1)
 
 
-class NullABEncoder(nn.Module):
-    def __init__(
-        self,
-        num_vars: int,
-    ):
-        super().__init__()
-
-        self.register_buffer("a", torch.zeros(0, num_vars))
-        self.register_buffer("b", torch.zeros(0))
-
-    def forward(self, x):
-        bs = x.shape[0]
-        return self.a[None, :, :].expand(bs, -1, -1), self.b[None, :].expand(bs, -1)
-
-
 class ZeroABEncoder(nn.Module):
     def __init__(
         self,
@@ -170,23 +155,3 @@ class ZeroABEncoder(nn.Module):
     def forward(self, x):
         bs = x.shape[0]
         return self.a[None, None, :].expand(bs, 1, -1), self.b[None, None].expand(bs, 1)
-
-
-class IdentityCEncoder(nn.Module):
-    def __init__(
-        self,
-    ):
-        super().__init__()
-
-    def forward(self, x):
-        return x
-
-
-class NegativeCEncoder(nn.Module):
-    def __init__(
-        self,
-    ):
-        super().__init__()
-
-    def forward(self, x):
-        return -x
