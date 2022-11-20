@@ -5,9 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ilploss"
 version = "1.0.0"
-
-dependencies = [
-	# "gurobi",
-	# "pytorch",
-	"tqdm",
-]
+description = "Train models with an Integer Linear Programming output layer."
+readme = "README.md"
+authors = [{ name = "Rishabh Ranjan", email = "rishabhranjan0207@gmail.com" }]
+license = { file = "LICENSE" }

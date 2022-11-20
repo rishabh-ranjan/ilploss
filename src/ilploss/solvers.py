@@ -6,7 +6,6 @@ import gurobi as grb
 from gurobi import GRB
 import numpy as np
 import torch
-from tqdm.auto import tqdm
 
 STATUS_MSG = defaultdict(
     lambda: "unknown",
@@ -46,13 +45,11 @@ class ILPSolver:
         vtype: str = GRB.INTEGER,
         env: Optional[grb.Env] = None,
         num_workers: int = 1,
-        show_tqdm: bool = False,
     ):
         super().__init__()
         self.vtype = vtype
         self.env = grb.Env(params={"OutputFlag": 0}) if env is None else env
         self.exe = ThreadPoolExecutor(num_workers)
-        self.show_tqdm = show_tqdm
 
     def __call__(self, a, b, c, h=None):
         batch_size, _, num_vars = a.shape
@@ -76,19 +73,13 @@ class ILPSolver:
             status[i] = m.status
 
         list(
-            tqdm(
-                self.exe.map(
-                    aux,
-                    np.arange(batch_size),
-                    a.cpu().numpy(),
-                    b.cpu().numpy(),
-                    c.cpu().numpy(),
-                    [None] * batch_size if h is None else h.cpu().numpy(),
-                ),
-                "instances",
-                total=batch_size,
-                disable=not self.show_tqdm,
-                leave=False,
+            self.exe.map(
+                aux,
+                np.arange(batch_size),
+                a.cpu().numpy(),
+                b.cpu().numpy(),
+                c.cpu().numpy(),
+                [None] * batch_size if h is None else h.cpu().numpy(),
             )
         )
 
