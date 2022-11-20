@@ -23,7 +23,7 @@ from ilploss.samplers import (
     ProjSampler,
 )
 from ilploss.losses import CoVBalancer, ILPLoss
-from ilploss.ilp import ILPSolver, STATUS_MSG
+from ilploss.solvers import ILPSolver, STATUS_MSG
 
 from utils import FastTensorDataLoader
 
@@ -153,7 +153,7 @@ def main(args):
                 temp = temp_opt.param_groups[0]["lr"]
 
                 # update early stopping patience
-                if acc_idv >= best_acc_idv:
+                if acc_idv > best_acc_idv:
                     best_acc_idv = acc_idv
                     best_net_state = deepcopy(net.state_dict())
                     best_epoch = epoch

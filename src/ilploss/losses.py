@@ -22,6 +22,11 @@ class ILPLoss(nn.Module):
         self.neg_margin = neg_margin
 
     def forward(self, a, b, c, pos, neg, temp):
+        """
+        a and b are tuples of learnable and known constraints.
+        Use ZeroABEncoder to avoid specifying known constraints.
+        """
+
         a_l, a_k = a
         b_l, b_k = b
         """
@@ -112,6 +117,8 @@ class StaticBalancer(nn.Module):
 
 
 class CoVBalancer(nn.Module):
+    """from https://arxiv.org/abs/2009.01717"""
+
     def __init__(
         self,
         num_losses: int,

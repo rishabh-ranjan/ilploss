@@ -6,6 +6,8 @@ import torch.nn.functional as F
 
 
 class SamplerList(nn.Module):
+    """Concatenate points sampled by list of samplers."""
+
     def __init__(
         self,
         samplers: List[nn.Module],
@@ -20,6 +22,8 @@ class SamplerList(nn.Module):
 
 
 class RandIntNbrWrapper(nn.Module):
+    """Sample random integer neighbor of points returned by underlying sampler."""
+
     def __init__(
         self,
         sampler: nn.Module,
@@ -60,6 +64,8 @@ class RandIntNbrWrapper(nn.Module):
 
 
 class SolverSampler(nn.Module):
+    """Use solution of ILP/LP as negative sample."""
+
     def __init__(
         self,
         solver: nn.Module,
@@ -81,6 +87,8 @@ class SolverSampler(nn.Module):
 
 
 class BatchSampler(nn.Module):
+    """Other solution vectors in the batch."""
+
     def __init__(
         self,
     ):
@@ -96,6 +104,8 @@ class BatchSampler(nn.Module):
 
 
 class ProjSampler(nn.Module):
+    """Project to constraint hyperplanes."""
+
     def __init__(
         self,
     ):
@@ -120,6 +130,8 @@ class ProjSampler(nn.Module):
 
 
 class UnitHypercubeSampler(nn.Module):
+    """Sample all points on the unit hypercube."""
+
     def __init__(
         self,
         num_vars: int,
@@ -136,41 +148,9 @@ class UnitHypercubeSampler(nn.Module):
         return self.enum[None, :, :].expand(y.shape[0], -1, -1)
 
 
-class BitNbrSampler(nn.Module):
-    def __init__(
-        self,
-    ):
-        super().__init__()
-
-    @torch.no_grad()
-    def forward(self, a, b, c, y):
-        y = y[..., None, :]
-        return y + (1 - 2 * y) * torch.eye(y.shape[-1], device=y.device)
-
-
-class BitKHopSampler(nn.Module):
-    def __init__(
-        self,
-        num_hops: int,
-        num_samples: int,
-    ):
-        super().__init__()
-
-        self.num_hops = num_hops
-        self.num_samples = num_samples
-
-    @torch.no_grad()
-    def forward(self, a, b, c, y):
-        batch_size, num_vars = y.shape
-        idx = torch.randint(
-            num_vars, (batch_size, self.num_samples, self.num_hops), device=y.device
-        )
-        mag = torch.any(F.one_hot(idx, num_classes=num_vars), dim=-2)
-        y = y[..., None, :]
-        return y + (1 - 2 * y) * mag
-
-
 class NbrSampler(nn.Module):
+    """Sample all nearest integer neighbors."""
+
     def __init__(
         self,
     ):
@@ -184,6 +164,8 @@ class NbrSampler(nn.Module):
 
 
 class KHopSampler(nn.Module):
+    """Sample integer points upto k-hop away (L1 distance <= k)."""
+
     def __init__(
         self,
         num_hops: int,
@@ -215,3 +197,41 @@ class KHopSampler(nn.Module):
         )
         sgn = 2 * msk - 1
         return y[:, None, :] + sgn * mag
+
+
+class BitNbrSampler(nn.Module):
+    """NbrSampler optimized for binary ILPs."""
+
+    def __init__(
+        self,
+    ):
+        super().__init__()
+
+    @torch.no_grad()
+    def forward(self, a, b, c, y):
+        y = y[..., None, :]
+        return y + (1 - 2 * y) * torch.eye(y.shape[-1], device=y.device)
+
+
+class BitKHopSampler(nn.Module):
+    """KHopSampler optimized for binary ILPs."""
+
+    def __init__(
+        self,
+        num_hops: int,
+        num_samples: int,
+    ):
+        super().__init__()
+
+        self.num_hops = num_hops
+        self.num_samples = num_samples
+
+    @torch.no_grad()
+    def forward(self, a, b, c, y):
+        batch_size, num_vars = y.shape
+        idx = torch.randint(
+            num_vars, (batch_size, self.num_samples, self.num_hops), device=y.device
+        )
+        mag = torch.any(F.one_hot(idx, num_classes=num_vars), dim=-2)
+        y = y[..., None, :]
+        return y + (1 - 2 * y) * mag

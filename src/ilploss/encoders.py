@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Callable, List
 
 import torch
 import torch.nn as nn
@@ -22,6 +22,8 @@ class DisjointEncoder(nn.Module):
 
 
 class StaticABEncoder(nn.Module):
+    """Parameterization of constraints as proposed in the CombOptNet paper."""
+
     def __init__(
         self,
         num_vars: int,
@@ -62,7 +64,7 @@ class StaticCEncoder(nn.Module):
     def __init__(
         self,
         num_vars: int,
-        init: Union[Callable, dict] = nn.init.ones_,
+        init: Callable = nn.init.ones_,
         train: bool = True,
     ):
 
@@ -143,6 +145,8 @@ class StaticLUEncoder(nn.Module):
 
 
 class ZeroABEncoder(nn.Module):
+    """Redundant constraints. Useful to specify known constraints when there are none."""
+
     def __init__(
         self,
         num_vars: int,

@@ -31,6 +31,16 @@ STATUS_MSG = defaultdict(
 
 
 class ILPSolver:
+    """Solve a batch of ILPs/LPs, parallelized via multi-threading.
+
+    GIL doesn't hurt as Gurobi runs C/C++ code.
+    Use vtype=GRB.CONTINUOUS to solve LPs.
+    Optionally accepts solution hint to provide to solver.
+
+    Returns the solution as well as Gurobi's status on each instance.
+    Decode status using STATUS_MSG defined above.
+    """
+
     def __init__(
         self,
         vtype: str = GRB.INTEGER,
